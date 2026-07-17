@@ -11,30 +11,33 @@
         <?php 
         include_once "inc/header.php"; 
 
-        if (isset($_GET['action'])) {
-            if ($_GET['action'] === 'csv' || $_GET['action'] === 'json') {
+            $action = $_GET['action'] ?? '';
+
+            // 如果是這兩種下載動作之一，才執行以下邏輯
+            if ($action === 'json' || $action === 'csv') {
                 ob_end_clean();
-                $type = $_GET['action'];
-                $data = $pdo->query("SELECT id, name, email, good_or_nono, good_text FROM `form_result`")->fetchAll(PDO::FETCH_ASSOC);
+                $data = $pdo->query("SELECT * FROM `form_result`")->fetchAll(PDO::FETCH_ASSOC);
+                
+                // 加強
+                header("Content-Disposition: attachment; filename=\"問卷回應資料_.{$action}\"");
 
-                header("Content-Disposition: attachment; filename=\"問卷回應資料_" . date('Ymd_His') . ".{$type}\"");
-
-                if ($type === 'csv') {
+                if ($action === 'json') {
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode($data);
+                    
+                } elseif ($action === 'csv') {
+                    
                     header('Content-Type: text/csv; charset=utf-8');
-                    echo "\xEF\xBB\xBF"; 
                     $out = fopen('php://output', 'w');
                     fputcsv($out, ['id', '姓名', '電子郵件', '評價', '寶貴意見']); 
                     foreach ($data as $row) {
                         fputcsv($out, $row); 
                     }
                     fclose($out);
-                } else {
-                    header('Content-Type: application/json; charset=utf-8');
-                    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); 
                 }
-                exit; 
+                
+                exit; // 結束腳本，避免輸出到後面的 HTML
             }
-        }
         ?>
 
         <div class="admin-btn m-3">
